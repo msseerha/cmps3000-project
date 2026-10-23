@@ -116,6 +116,8 @@ class User:
     def set_password(self, password, userid):
         """Updates the password for the specified user account."""
         try:
+            if userid == "":
+                raise ValueError(f"\nRegistration Error: User ID cannot be empty.\n")
             if password == "":
                 raise ValueError(f"\nRegistration Error: Password cannot be empty.\n")
 
@@ -154,6 +156,9 @@ class Buyer(User):
         """Authenticates buyer credentials, managing login attempts and account locking rules."""
 
         try:
+            if userid == "":
+                raise ValueError(f"\nRegistration Error: User ID cannot be empty.\n")
+
             if userid not in User.users:
                 raise ValueError (f"Login Error: User {userid} does not exist.\n")
 
@@ -408,6 +413,9 @@ class Seller(User):
     def seller_login(cls, userid, password):
         """Authenticates seller credentials and manages login lockouts."""
         try:
+            if userid == "":
+                raise ValueError(f"\nRegistration Error: User ID cannot be empty.\n")
+
             if userid not in User.users:
                 raise ValueError (f"Login Error: User {userid} does not exist.\n")
 
@@ -543,6 +551,8 @@ class Admin(User):
     def admin_login(cls, userid, password):
         """Authenticates admin login credentials and permissions."""
         try:
+            if userid == "":
+                raise ValueError(f"\nRegistration Error: User ID cannot be empty.\n")
             if userid not in User.users:
                 raise ValueError (f"Login Error: User {userid} does not exist.\n")
             if User.users[userid]["adminRole"] != True:
