@@ -261,17 +261,21 @@ class Buyer(User):
     def add_payment(self, cardType, cardNumber, expiryDate, CVV):
         """Validates and saves credit card payment details based on card type rules."""
         today = datetime.today()
+        first_of_month = today.replace(hour=0, minute=0, second=0, microsecond=0, day = 1)
         try:
             if cardType not in Buyer.cardTypes:
                 raise ValueError("\nNot a Valid Card Type. Pick between (VISA, MASTERCARD, AMEX)")
-
-            if datetime.strptime(expiryDate, "%Y-%m-%d") >= today:
+            try:
+                valid_thru = datetime.strptime(expiryDate, "%Y-%m")
+            except ValueError:
+                raise ValueError(f'\nInvalid Date Format: Please enter the expiry date as YYYY-MM (e.g., 2026-10).')
+            if valid_thru >= first_of_month:
                 # Validation for VISA and MASTERCARD (16 digit card, 3 digit CVV)
                 if len(cardNumber) == 16 and cardType != 'AMEX' and len(CVV) == 3:
                     self.payment["Card Number"] = int(cardNumber)
                     self.payment["CVV"] = int(CVV)
                     self.payment["Card Type"] = cardType
-                    self.payment["Expiry Date"] = datetime.strptime(expiryDate, "%Y-%m-%d")
+                    self.payment["Expiry Date"] = valid_thru
                     self.isPaymentValid = True
                     Buyer.buyer_paymentInfo.update({self.userid : self.payment})
                 # Validation for AMEX (15 digit card, 4 digit CVV)
@@ -279,28 +283,28 @@ class Buyer(User):
                     self.payment["Card Number"] = int(cardNumber)
                     self.payment["CVV"] = int(CVV)
                     self.payment["Card Type"] = cardType
-                    self.payment["Expiry Date"] = datetime.strptime(expiryDate, "%Y-%m-%d")
+                    self.payment["Expiry Date"] = valid_thru
                     self.isPaymentValid = True
                     Buyer.buyer_paymentInfo.update({self.userid : self.payment})
                 else:
-                    raise ValueError("Invalid Payment Details:\n- Card Number must be 16 Digits (VISA/MASTERCARD) or 15 digits (AMEX)\n- CVV must be 3 digits (VISA/MASTERCARD) or 4 digits (AMEX) ")
+                    raise ValueError("\nInvalid Payment Details:\n- Card Number must be 16 Digits (VISA/MASTERCARD) or 15 digits (AMEX)\n- CVV must be 3 digits (VISA/MASTERCARD) or 4 digits (AMEX) ")
                 print("\nPayment Method Successfully Added")
             else:
-                raise TypeError("ERROR: Invalid Expiry Date")
+                raise ValueError("\nInvalid Expiry Date: The provided card is past its expiration date.")
         except ValueError as e:
             self.payment["Card Number"] = None
             self.payment["CVV"] = None
             self.payment["Card Type"] = None
             self.payment["Expiry Date"] = None
             self.isPaymentValid = False
-            print (f'\n{e}')
-        except TypeError as e:
-            print (f'\n{e}')
+            print (f'{e}')
+        # except TypeError as e:
+        #     print (f'\n{e}')
 
     def show_payment_info(self):
         """Displays saved payment method details for the buyer."""
         if self.userid in Buyer.buyer_paymentInfo:
-            print (f"Card Type: {Buyer.buyer_paymentInfo[self.userid]['Card Type']}\nCard Number: {Buyer.buyer_paymentInfo[self.userid]['Card Number']}\nExpiry Date: {Buyer.buyer_paymentInfo[self.userid]['Expiry Date']}\nCVV: {Buyer.buyer_paymentInfo[self.userid]['CVV']}")
+            print (f"Card Type: {Buyer.buyer_paymentInfo[self.userid]['Card Type']}\nCard Number: {Buyer.buyer_paymentInfo[self.userid]['Card Number']}\nValid Until: {Buyer.buyer_paymentInfo[self.userid]['Expiry Date'].strftime('%Y-%m')}\nCVV: {Buyer.buyer_paymentInfo[self.userid]['CVV']}")
         else:
             print ("Payment method needs to be added first.")
 
@@ -345,7 +349,8 @@ class Buyer(User):
                     if 2000.00-float(Buyer.buyer_yearly_expense[self.userid][datetime.now().year]) > 0:
                         NotificationSystem.Buyers_Log[self.userid] = [self.memberStatus, f"[UNLOCK OFFER] Spend ${2000.00-float(Buyer.buyer_yearly_expense[self.userid][datetime.now().year]):.2f} more this year to upgrade your membership to Platinum."]
                         # print (f"Spend ${2000.00-float(Buyer.buyer_yearly_expense[self.userid][datetime.now().year]):.2f} more this year to upgrade your membership to Platinum.")
-            amount_calculate = {'Subtotal' : self.calculate_cart(), 'Total Paid (after discounts)' : self.calculate_discount()}
+            disc_string = ' (after discounts)' if self.memberStatus != "Standard" else ''
+            amount_calculate = {'Subtotal' : self.calculate_cart(), f'Total Paid{disc_string}' : self.calculate_discount()}
             combined = self.cart | amount_calculate
             # Record transaction in purchase history
             if date.today() not in self.purchase_history:
@@ -354,7 +359,7 @@ class Buyer(User):
                 self.purchase_history[date.today()]['Transaction ' + str(len(self.purchase_history[date.today()])+1)] = combined
             self.cart = {}
             Buyer.buyer_purchase_history[self.userid] = self.purchase_history
-            print(f"Payment Successful! Your card has been charged with ${amount_calculate['Total Paid (after discounts)']:.2f}. See 'View Purchase History' (Option 9) for details.")
+            print(f"Payment Successful! Your card has been charged with ${amount_calculate[f'Total Paid{disc_string}']:.2f}. See 'View Purchase History' (Option 9) for details.")
         else:
             if len(self.cart) == 0:
                 print("Your cart is currently empty")
@@ -758,7 +763,7 @@ def main():
                                 print("Enter Card details: ")
                                 buyer_choice7 = input("Card Type (VISA/MASTERCARD/AMEX): ").strip().upper()
                                 buyer_choice7_1 = input("Card Number: ").strip()
-                                buyer_choice7_2 = input("Expiry Date (YYYY-MM-DD): ").strip()
+                                buyer_choice7_2 = input("Valid Until (YYYY-MM): ").strip()
                                 buyer_choice7_3 = input("CVV: ").strip()
                                 buyerator.add_payment(buyer_choice7, buyer_choice7_1, buyer_choice7_2, buyer_choice7_3)
                             case "8":
