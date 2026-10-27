@@ -372,7 +372,7 @@ class Buyer(User):
         if self.userid in Buyer.buyer_yearly_expense:
             print (f' {Buyer.buyer_yearly_expense[self.userid]}\n')
         else:
-            "User does not have any purchase history yet."
+            print ("User does not have any purchase history yet.")
 
     def view_purchase_history(self):
         """Displays historical transaction records grouped by purchase date."""
