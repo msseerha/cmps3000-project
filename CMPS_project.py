@@ -304,7 +304,8 @@ class Buyer(User):
     def show_payment_info(self):
         """Displays saved payment method details for the buyer."""
         if self.userid in Buyer.buyer_paymentInfo:
-            print (f"Card Type: {Buyer.buyer_paymentInfo[self.userid]['Card Type']}\nCard Number: {Buyer.buyer_paymentInfo[self.userid]['Card Number']}\nValid Until: {Buyer.buyer_paymentInfo[self.userid]['Expiry Date'].strftime('%Y-%m')}\nCVV: {Buyer.buyer_paymentInfo[self.userid]['CVV']}")
+            valid_until = None if Buyer.buyer_paymentInfo[self.userid]['Expiry Date'] is  None else Buyer.buyer_paymentInfo[self.userid]['Expiry Date'].strftime('%Y-%m')
+            print (f"Card Type: {Buyer.buyer_paymentInfo[self.userid]['Card Type']}\nCard Number: {Buyer.buyer_paymentInfo[self.userid]['Card Number']}\nValid Until: {valid_until}\nCVV: {Buyer.buyer_paymentInfo[self.userid]['CVV']}")
         else:
             print ("Payment method needs to be added first.")
 
@@ -477,6 +478,7 @@ class Seller(User):
                 if User.Catalogue[item]["Seller"] == self.userid:
                     if float(price):
                         User.Catalogue[item]["Price"] = float(price)
+                        print (f"Item {item} price updated to ${float(price):.2f}")
                     else:
                         print ("Please enter a valid $ amount")
                 else:
